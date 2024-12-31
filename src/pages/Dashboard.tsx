@@ -2,19 +2,17 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ExpenseForm } from "@/components/expenses/ExpenseForm";
+import { IncomeForm } from "@/components/income/IncomeForm";
+import { FinancialCharts } from "@/components/summary/FinancialCharts";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [description, setDescription] = useState("");
-  const [expenseValue, setExpenseValue] = useState("");
-  const [incomeValue, setIncomeValue] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [expenses, setExpenses] = useState([]);
   const [totalIncome, setTotalIncome] = useState(0);
@@ -27,11 +25,23 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Erro",
+          description: "Usuário não autenticado",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Buscar despesas
       const { data: expensesData, error: expensesError } = await supabase
         .from('expenses')
         .select('*')
-        .eq('month', selectedMonth.substring(0, 10));
+        .eq('month', selectedMonth.substring(0, 10))
+        .eq('user_id', user.id);
 
       if (expensesError) throw expensesError;
       setExpenses(expensesData);
@@ -41,7 +51,8 @@ const Dashboard = () => {
       const { data: incomeData, error: incomeError } = await supabase
         .from('income')
         .select('*')
-        .eq('month', selectedMonth.substring(0, 10));
+        .eq('month', selectedMonth.substring(0, 10))
+        .eq('user_id', user.id);
 
       if (incomeError) throw incomeError;
       setTotalIncome(incomeData.reduce((acc, curr) => acc + Number(curr.value), 0));
@@ -59,68 +70,6 @@ const Dashboard = () => {
     fetchData();
   }, [selectedMonth]);
 
-  const handleAddExpense = async () => {
-    try {
-      const { error } = await supabase
-        .from('expenses')
-        .insert([
-          {
-            description,
-            value: Number(expenseValue),
-            month: selectedMonth,
-          }
-        ]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Despesa adicionada com sucesso",
-      });
-
-      setDescription("");
-      setExpenseValue("");
-      fetchData();
-    } catch (error) {
-      console.error('Erro ao adicionar despesa:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível adicionar a despesa",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleAddIncome = async () => {
-    try {
-      const { error } = await supabase
-        .from('income')
-        .insert([
-          {
-            value: Number(incomeValue),
-            month: selectedMonth,
-          }
-        ]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Receita adicionada com sucesso",
-      });
-
-      setIncomeValue("");
-      fetchData();
-    } catch (error) {
-      console.error('Erro ao adicionar receita:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível adicionar a receita",
-        variant: "destructive",
-      });
-    }
-  };
-
   const getMonthOptions = () => {
     const months = [];
     for (let i = 0; i < 12; i++) {
@@ -133,22 +82,6 @@ const Dashboard = () => {
     }
     return months;
   };
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
-
-  const pieChartData = expenses.map((expense, index) => ({
-    name: expense.description,
-    value: Number(expense.value),
-    color: COLORS[index % COLORS.length]
-  }));
-
-  const barChartData = [
-    {
-      name: 'Balanço',
-      Receitas: totalIncome,
-      Despesas: totalExpenses
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -191,64 +124,9 @@ const Dashboard = () => {
             </Select>
           </div>
 
-          {/* Adicionar Despesa */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium mb-4">Adicionar Despesa</h2>
-            <div className="space-y-4">
-              <Input
-                placeholder="Descrição"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-              <Input
-                type="number"
-                placeholder="Valor"
-                value={expenseValue}
-                onChange={(e) => setExpenseValue(e.target.value)}
-              />
-              <Button onClick={handleAddExpense} className="w-full">
-                Adicionar Despesa
-              </Button>
-            </div>
-
-            <div className="mt-6">
-              <h3 className="text-sm font-medium mb-2">Despesas do Mês</h3>
-              <div className="space-y-2">
-                {expenses.map((expense) => (
-                  <div
-                    key={expense.id}
-                    className="flex justify-between items-center p-2 bg-gray-50 rounded"
-                  >
-                    <span>{expense.description}</span>
-                    <span>R$ {Number(expense.value).toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Adicionar Receita */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium mb-4">Adicionar Receita</h2>
-            <div className="space-y-4">
-              <Input
-                type="number"
-                placeholder="Valor"
-                value={incomeValue}
-                onChange={(e) => setIncomeValue(e.target.value)}
-              />
-              <Button onClick={handleAddIncome} className="w-full">
-                Adicionar Receita
-              </Button>
-            </div>
-
-            <div className="mt-6">
-              <h3 className="text-sm font-medium mb-2">Total de Receitas</h3>
-              <div className="p-2 bg-gray-50 rounded">
-                <span>R$ {totalIncome.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
+          {/* Formulários */}
+          <ExpenseForm selectedMonth={selectedMonth} onExpenseAdded={fetchData} />
+          <IncomeForm selectedMonth={selectedMonth} onIncomeAdded={fetchData} />
 
           {/* Resumo */}
           <div className="col-span-full bg-white shadow rounded-lg p-6">
@@ -275,41 +153,11 @@ const Dashboard = () => {
             </div>
 
             {/* Gráficos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-sm font-medium mb-4">Balanço Mensal</h3>
-                <BarChart width={400} height={300} data={barChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="Receitas" fill="#3B82F6" />
-                  <Bar dataKey="Despesas" fill="#EF4444" />
-                </BarChart>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium mb-4">Distribuição de Despesas</h3>
-                <PieChart width={400} height={300}>
-                  <Pie
-                    data={pieChartData}
-                    cx={200}
-                    cy={150}
-                    labelLine={false}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {pieChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </div>
-            </div>
+            <FinancialCharts 
+              totalIncome={totalIncome}
+              totalExpenses={totalExpenses}
+              expenses={expenses}
+            />
           </div>
         </div>
       </main>
