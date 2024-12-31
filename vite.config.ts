@@ -30,9 +30,10 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       host: true,
+      cors: true,
     },
     define: {
-      'process.env.VITE_SUPABASE_URL': JSON.stringify('https://api.supabase.co/projects/qqcmxpnmxpxmcxlvvxlk'),
+      'process.env.VITE_SUPABASE_URL': JSON.stringify('https://qqcmxpnmxpxmcxlvvxlk.supabase.co'),
       'process.env.VITE_SUPABASE_ANON_KEY': JSON.stringify('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxY214cG5teHB4bWN4bHZ2eGxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDQwNTY3NzAsImV4cCI6MjAxOTYzMjc3MH0.Wd_bEzGxlNVXtZQz5JqFfqBWLQEcXHNXWBEwYxpgHBk'),
     },
   }
