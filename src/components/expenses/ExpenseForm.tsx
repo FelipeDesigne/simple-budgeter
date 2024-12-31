@@ -4,6 +4,9 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { addMonths, format } from 'date-fns';
 
 interface ExpenseFormProps {
   selectedMonth: string;
@@ -12,10 +15,17 @@ interface ExpenseFormProps {
 
 export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps) => {
   const { toast } = useToast();
-  const [description, setDescription] = useState("");
-  const [expenseValue, setExpenseValue] = useState("");
+  const [formData, setFormData] = useState({
+    description: '',
+    value: '',
+    category: '',
+    payment_method: 'money',
+    installments: '1'
+  });
 
-  const handleAddExpense = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -28,24 +38,61 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
         return;
       }
 
-      const { error } = await supabase
-        .from('expenses')
-        .insert({
-          description,
-          value: Number(expenseValue),
-          month: selectedMonth,
-          user_id: user.id
-        });
+      const installmentGroup = crypto.randomUUID();
+      const numberOfInstallments = parseInt(formData.installments);
+      const installmentValue = Number(formData.value) / numberOfInstallments;
 
-      if (error) throw error;
+      // Criar array de promessas para todas as parcelas
+      const baseDate = new Date(selectedMonth);
+      const installmentPromises = Array.from({ length: numberOfInstallments }, (_, index) => {
+        // Garantir que a data base esteja no primeiro dia do mês
+        const installmentDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + index, 1);
+        const monthFormatted = format(installmentDate, 'yyyy-MM-dd');
+        
+        const expenseData = {
+          description: `${formData.description}${numberOfInstallments > 1 ? ` (${index + 1}/${numberOfInstallments})` : ''}`,
+          value: installmentValue,
+          category: formData.category,
+          payment_method: formData.payment_method,
+          month: monthFormatted,
+          user_id: user.id,
+          installments: numberOfInstallments,
+          current_installment: index + 1,
+          installment_group: installmentGroup
+        };
+
+        console.log('Inserindo parcela:', expenseData);
+        
+        return supabase
+          .from('expenses')
+          .insert(expenseData)
+          .select();
+      });
+
+      // Executar todas as inserções
+      const results = await Promise.all(installmentPromises);
+      const errors = results.filter(result => result.error);
+
+      if (errors.length > 0) {
+        console.error('Erros ao inserir parcelas:', errors);
+        throw errors[0].error;
+      }
 
       toast({
         title: "Sucesso",
-        description: "Despesa adicionada com sucesso",
+        description: numberOfInstallments > 1 
+          ? `Despesa parcelada em ${numberOfInstallments}x adicionada com sucesso`
+          : "Despesa adicionada com sucesso",
       });
 
-      setDescription("");
-      setExpenseValue("");
+      setFormData({
+        description: '',
+        value: '',
+        category: '',
+        payment_method: 'money',
+        installments: '1'
+      });
+
       onExpenseAdded();
     } catch (error) {
       console.error('Erro ao adicionar despesa:', error);
@@ -63,24 +110,89 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
         <CardTitle>Adicionar Despesa</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <Input
-            placeholder="Descrição"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="bg-secondary"
-          />
-          <Input
-            type="number"
-            placeholder="Valor"
-            value={expenseValue}
-            onChange={(e) => setExpenseValue(e.target.value)}
-            className="bg-secondary"
-          />
-          <Button onClick={handleAddExpense} className="w-full">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="description">Descrição</Label>
+            <Input
+              id="description"
+              placeholder="Descrição"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="bg-secondary"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="value">Valor</Label>
+            <Input
+              id="value"
+              type="number"
+              placeholder="Valor"
+              value={formData.value}
+              onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+              className="bg-secondary"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="category">Categoria</Label>
+            <Select
+              value={formData.category}
+              onValueChange={(value) => setFormData({ ...formData, category: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="alimentacao">Alimentação</SelectItem>
+                <SelectItem value="transporte">Transporte</SelectItem>
+                <SelectItem value="moradia">Moradia</SelectItem>
+                <SelectItem value="saude">Saúde</SelectItem>
+                <SelectItem value="educacao">Educação</SelectItem>
+                <SelectItem value="lazer">Lazer</SelectItem>
+                <SelectItem value="outros">Outros</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="payment_method">Método de Pagamento</Label>
+            <Select
+              value={formData.payment_method}
+              onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o método de pagamento" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="money">Dinheiro</SelectItem>
+                <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
+                <SelectItem value="debit_card">Cartão de Débito</SelectItem>
+                <SelectItem value="pix">PIX</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {formData.payment_method === 'credit_card' && (
+            <div className="space-y-2">
+              <Label htmlFor="installments">Número de Parcelas</Label>
+              <Select
+                value={formData.installments}
+                onValueChange={(value) => setFormData({ ...formData, installments: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o número de parcelas" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num}x {formData.value && `(R$ ${(Number(formData.value) / num).toFixed(2)} por parcela)`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <Button type="submit" className="w-full">
             Adicionar Despesa
           </Button>
-        </div>
+        </form>
       </CardContent>
     </Card>
   );

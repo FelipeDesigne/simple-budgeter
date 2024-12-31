@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { format } from 'date-fns';
 
 interface IncomeFormProps {
   selectedMonth: string;
@@ -27,11 +28,24 @@ export const IncomeForm = ({ selectedMonth, onIncomeAdded }: IncomeFormProps) =>
         return;
       }
 
+      if (!incomeValue || Number(incomeValue) <= 0) {
+        toast({
+          title: "Erro",
+          description: "O valor deve ser maior que zero",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const monthDate = new Date(selectedMonth);
+      const formattedMonth = format(monthDate, 'yyyy-MM-dd');
+
       const { error } = await supabase
         .from('income')
         .insert({
+          description: 'Receita',
           value: Number(incomeValue),
-          month: selectedMonth,
+          month: formattedMonth,
           user_id: user.id
         });
 
