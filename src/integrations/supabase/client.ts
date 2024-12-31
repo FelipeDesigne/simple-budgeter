@@ -10,7 +10,7 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      flowType: 'pkce',
+      flowType: 'implicit',
       redirectTo: 'https://felipedesigne.github.io/simple-budgeter/#/dashboard'
     }
   }

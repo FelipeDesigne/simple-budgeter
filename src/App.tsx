@@ -35,7 +35,7 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <HashRouter basename="/simple-budgeter">
+          <HashRouter>
             <Routes>
               <Route
                 path="/"
