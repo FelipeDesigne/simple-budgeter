@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const supabaseUrl = 'https://qqcmxpnmxpxmcxlvvxlk.supabase.app';
+const supabaseUrl = 'https://qqcmxpnmxpxmcxlvvxlk.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxY214cG5teHB4bWN4bHZ2eGxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDQwNTY3NzAsImV4cCI6MjAxOTYzMjc3MH0.Wd_bEzGxlNVXtZQz5JqFfqBWLQEcXHNXWBEwYxpgHBk';
 
 export const supabase = createClient<Database>(
@@ -13,7 +13,7 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      flowType: 'implicit',
+      flowType: 'pkce',
       redirectTo: 'https://felipedesigne.github.io/simple-budgeter/dashboard'
     }
   }
