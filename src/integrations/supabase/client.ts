@@ -11,7 +11,7 @@ export const supabase = createClient<Database>(
       persistSession: true,
       detectSessionInUrl: true,
       flowType: 'implicit',
-      redirectTo: 'https://felipedesigne.github.io/simple-budgeter/#/dashboard'
+      redirectTo: 'https://felipedesigne.github.io/simple-budgeter/dashboard'
     }
   }
 );
