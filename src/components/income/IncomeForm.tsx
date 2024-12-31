@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface IncomeFormProps {
   selectedMonth: string;
@@ -54,19 +55,24 @@ export const IncomeForm = ({ selectedMonth, onIncomeAdded }: IncomeFormProps) =>
   };
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-lg font-medium mb-4">Adicionar Receita</h2>
-      <div className="space-y-4">
-        <Input
-          type="number"
-          placeholder="Valor"
-          value={incomeValue}
-          onChange={(e) => setIncomeValue(e.target.value)}
-        />
-        <Button onClick={handleAddIncome} className="w-full">
-          Adicionar Receita
-        </Button>
-      </div>
-    </div>
+    <Card className="bg-card">
+      <CardHeader>
+        <CardTitle>Adicionar Receita</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <Input
+            type="number"
+            placeholder="Valor"
+            value={incomeValue}
+            onChange={(e) => setIncomeValue(e.target.value)}
+            className="bg-secondary"
+          />
+          <Button onClick={handleAddIncome} className="w-full">
+            Adicionar Receita
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

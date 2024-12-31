@@ -9,6 +9,8 @@ import { ptBR } from 'date-fns/locale';
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { IncomeForm } from "@/components/income/IncomeForm";
 import { FinancialCharts } from "@/components/summary/FinancialCharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { WalletCards, Receipt, CreditCard, Wallet } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -84,11 +86,11 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
+    <div className="min-h-screen bg-background">
+      <nav className="border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <h1 className="text-xl font-semibold text-gray-900">
+            <h1 className="text-xl font-semibold text-foreground">
               Controle Financeiro
             </h1>
             <Button
@@ -103,15 +105,68 @@ const Dashboard = () => {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Seletor de Mês */}
-          <div className="col-span-full bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium mb-4">Selecionar Mês</h2>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Card className="bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Receitas</CardTitle>
+              <WalletCards className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">
+                R$ {totalIncome.toFixed(2)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Despesas</CardTitle>
+              <Receipt className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">
+                R$ {totalExpenses.toFixed(2)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Saldo</CardTitle>
+              <Wallet className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">
+                R$ {(totalIncome - totalExpenses).toFixed(2)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Cartão</CardTitle>
+              <CreditCard className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">
+                R$ 0,00
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Month Selector */}
+        <Card className="mb-8 bg-card">
+          <CardHeader>
+            <CardTitle>Selecionar Mês</CardTitle>
+          </CardHeader>
+          <CardContent>
             <Select
               value={selectedMonth}
               onValueChange={setSelectedMonth}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -122,44 +177,28 @@ const Dashboard = () => {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Formulários */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Forms */}
           <ExpenseForm selectedMonth={selectedMonth} onExpenseAdded={fetchData} />
           <IncomeForm selectedMonth={selectedMonth} onIncomeAdded={fetchData} />
+        </div>
 
-          {/* Resumo */}
-          <div className="col-span-full bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium mb-4">Resumo</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <h3 className="text-sm font-medium text-blue-800">Receitas</h3>
-                <p className="text-2xl font-bold text-blue-600">
-                  R$ {totalIncome.toFixed(2)}
-                </p>
-              </div>
-              <div className="p-4 bg-red-50 rounded-lg">
-                <h3 className="text-sm font-medium text-red-800">Despesas</h3>
-                <p className="text-2xl font-bold text-red-600">
-                  R$ {totalExpenses.toFixed(2)}
-                </p>
-              </div>
-              <div className="p-4 bg-green-50 rounded-lg">
-                <h3 className="text-sm font-medium text-green-800">Saldo</h3>
-                <p className="text-2xl font-bold text-green-600">
-                  R$ {(totalIncome - totalExpenses).toFixed(2)}
-                </p>
-              </div>
-            </div>
-
-            {/* Gráficos */}
+        {/* Charts */}
+        <Card className="mt-8 bg-card">
+          <CardHeader>
+            <CardTitle>Resumo Financeiro</CardTitle>
+          </CardHeader>
+          <CardContent>
             <FinancialCharts 
               totalIncome={totalIncome}
               totalExpenses={totalExpenses}
               expenses={expenses}
             />
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

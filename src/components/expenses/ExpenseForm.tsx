@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ExpenseFormProps {
   selectedMonth: string;
@@ -57,24 +58,30 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
   };
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-lg font-medium mb-4">Adicionar Despesa</h2>
-      <div className="space-y-4">
-        <Input
-          placeholder="Descrição"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-        <Input
-          type="number"
-          placeholder="Valor"
-          value={expenseValue}
-          onChange={(e) => setExpenseValue(e.target.value)}
-        />
-        <Button onClick={handleAddExpense} className="w-full">
-          Adicionar Despesa
-        </Button>
-      </div>
-    </div>
+    <Card className="bg-card">
+      <CardHeader>
+        <CardTitle>Adicionar Despesa</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <Input
+            placeholder="Descrição"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="bg-secondary"
+          />
+          <Input
+            type="number"
+            placeholder="Valor"
+            value={expenseValue}
+            onChange={(e) => setExpenseValue(e.target.value)}
+            className="bg-secondary"
+          />
+          <Button onClick={handleAddExpense} className="w-full">
+            Adicionar Despesa
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
