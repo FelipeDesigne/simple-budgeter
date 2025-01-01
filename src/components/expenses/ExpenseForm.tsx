@@ -31,9 +31,11 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
     setIsSubmitting(true);
     
     try {
+      console.log('Iniciando submissão do formulário...');
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
+        console.error('Usuário não autenticado');
         toast({
           title: "Erro",
           description: "Usuário não autenticado",
@@ -41,6 +43,10 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
         });
         return;
       }
+
+      console.log('Usuário autenticado:', user.id);
+      console.log('Dados do formulário:', formData);
+      console.log('Mês selecionado:', selectedMonth);
 
       // Validar os campos
       if (!formData.description.trim()) {
@@ -58,6 +64,9 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
       const installmentGroup = crypto.randomUUID();
       const numberOfInstallments = parseInt(formData.installments);
       const installmentValue = Number(formData.value) / numberOfInstallments;
+
+      console.log('Número de parcelas:', numberOfInstallments);
+      console.log('Valor por parcela:', installmentValue);
 
       // Criar array de promessas para todas as parcelas
       const baseDate = new Date(selectedMonth);
@@ -78,7 +87,7 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
           installment_group: installmentGroup
         };
 
-        console.log('Inserindo parcela:', expenseData);
+        console.log(`Inserindo parcela ${index + 1}:`, expenseData);
         
         return supabase
           .from('expenses')
@@ -86,14 +95,19 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
           .select();
       });
 
+      console.log('Executando inserções...');
       // Executar todas as inserções
       const results = await Promise.all(installmentPromises);
+      console.log('Resultados das inserções:', results);
+
       const errors = results.filter(result => result.error);
 
       if (errors.length > 0) {
         console.error('Erros ao inserir parcelas:', errors);
         throw new Error(errors[0].error.message);
       }
+
+      console.log('Inserções concluídas com sucesso');
 
       // Limpar o formulário antes de chamar onExpenseAdded
       setFormData({
@@ -105,7 +119,9 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
       });
 
       // Chamar onExpenseAdded imediatamente após a inserção bem-sucedida
+      console.log('Chamando onExpenseAdded...');
       onExpenseAdded();
+      console.log('onExpenseAdded chamado');
 
       toast({
         title: "Sucesso",

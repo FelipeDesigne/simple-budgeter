@@ -2,21 +2,17 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const supabaseUrl = 'https://ofznhnwxiksocrmtcbnb.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mem5obnd4aWtzb2NybXRjYm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU2NzA1ODEsImV4cCI6MjA1MTI0NjU4MX0.Me3JWvTv7r_uqP_FEBd3kfeHVTmiX31Vv4taRx0sSVQ';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient<Database>(
-  supabaseUrl,
-  supabaseAnonKey,
-  {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true,
-      flowType: 'pkce',
-      storage: localStorage,
-      storageKey: 'supabase.auth.token',
-      redirectTo: 'https://felipedesigne.github.io/simple-budgeter/dashboard'
-    }
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Supabase URL and Anon Key must be defined');
+}
+
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
   }
-);
+});

@@ -36,15 +36,25 @@ const Dashboard = () => {
     setIsLoading(true);
     
     try {
+      console.log('Buscando despesas...');
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) return;
+      if (!user) {
+        console.error('Usuário não autenticado ao buscar despesas');
+        return;
+      }
 
-      if (!selectedMonth) return;
+      if (!selectedMonth) {
+        console.error('Mês não selecionado ao buscar despesas');
+        return;
+      }
+
+      console.log('Mês selecionado:', selectedMonth);
 
       // Formatar a data para o primeiro dia do mês
       const monthDate = new Date(selectedMonth);
       const formattedMonth = format(monthDate, 'yyyy-MM-dd');
+      console.log('Mês formatado:', formattedMonth);
 
       // Buscar todas as despesas do mês selecionado
       const { data: expensesData, error: expensesError } = await supabase
@@ -53,15 +63,22 @@ const Dashboard = () => {
         .eq('month', formattedMonth)
         .eq('user_id', user.id);
 
-      if (expensesError) throw expensesError;
+      if (expensesError) {
+        console.error('Erro ao buscar despesas:', expensesError);
+        throw expensesError;
+      }
+
+      console.log('Despesas encontradas:', expensesData);
 
       // Calcular total de despesas
       const total = expensesData?.reduce((acc, expense) => acc + expense.value, 0) || 0;
+      console.log('Total de despesas:', total);
       setTotalExpenses(total);
 
       // Calcular total de despesas no cartão de crédito
       const creditCardTotal = expensesData?.reduce((acc, expense) => 
         expense.payment_method === 'credit_card' ? acc + expense.value : acc, 0) || 0;
+      console.log('Total de despesas no cartão:', creditCardTotal);
       setCreditCardExpenses(creditCardTotal);
 
       setExpenses(expensesData || []);
@@ -74,6 +91,7 @@ const Dashboard = () => {
         .maybeSingle();
 
       if (!limitError && limitData?.card_limit) {
+        console.log('Limite do cartão:', limitData.card_limit);
         setCreditCardLimit(limitData.card_limit);
       }
 
@@ -81,6 +99,8 @@ const Dashboard = () => {
       const nextMonth = addMonths(monthDate, 1);
       const futureStartDate = format(nextMonth, 'yyyy-MM-dd');
       const futureEndDate = format(addMonths(monthDate, 12), 'yyyy-MM-dd');
+
+      console.log('Buscando parcelas futuras de', futureStartDate, 'até', futureEndDate);
 
       const { data: futureInstallmentsData, error: futureError } = await supabase
         .from('expenses')
@@ -92,6 +112,7 @@ const Dashboard = () => {
 
       if (!futureError && futureInstallmentsData) {
         const futureTotal = futureInstallmentsData.reduce((acc, expense) => acc + expense.value, 0);
+        console.log('Total de parcelas futuras:', futureTotal);
         setFutureInstallments(futureTotal);
       }
     } catch (error) {
