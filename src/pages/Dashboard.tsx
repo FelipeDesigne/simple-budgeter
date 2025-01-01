@@ -24,6 +24,7 @@ const Dashboard = () => {
   const [creditCardLimit, setCreditCardLimit] = useState(0);
   const [creditCardExpenses, setCreditCardExpenses] = useState(0);
   const [futureInstallments, setFutureInstallments] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -31,6 +32,9 @@ const Dashboard = () => {
   };
 
   const fetchExpenses = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -92,6 +96,13 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as despesas",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -116,6 +127,11 @@ const Dashboard = () => {
       setTotalIncome(total);
     } catch (error) {
       console.error('Erro ao buscar receitas:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as receitas",
+        variant: "destructive",
+      });
     }
   };
 
@@ -141,140 +157,99 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    fetchExpenses();
-    fetchIncome();
+    if (selectedMonth) {
+      fetchExpenses();
+      fetchIncome();
+    }
   }, [selectedMonth]);
 
   return (
     <div className="min-h-screen bg-background">
       <nav className="border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <h1 className="text-xl font-semibold text-foreground">
-              Controle Financeiro
-            </h1>
-            <Button
-              variant="outline"
-              onClick={handleSignOut}
-              className="text-sm"
-            >
-              Sair
-            </Button>
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Selecione o mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month: any) => (
+                    <SelectItem key={month.value} value={month.value}>
+                      {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center">
+              <Button variant="ghost" onClick={handleSignOut}>Sair</Button>
+            </div>
           </div>
         </div>
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-card">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Receitas</CardTitle>
-              <WalletCards className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
+              <Wallet className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                R$ {totalIncome.toFixed(2)}
-              </div>
+              <div className="text-2xl font-bold">R$ {totalIncome.toFixed(2)}</div>
             </CardContent>
           </Card>
 
-          <Card className="bg-card">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Despesas</CardTitle>
-              <Receipt className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-medium">Despesas Totais</CardTitle>
+              <Receipt className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                R$ {totalExpenses.toFixed(2)}
-              </div>
+              <div className="text-2xl font-bold">R$ {totalExpenses.toFixed(2)}</div>
             </CardContent>
           </Card>
 
-          <Card className="bg-card">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Saldo</CardTitle>
-              <Wallet className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-medium">Cartão de Crédito</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                R$ {(totalIncome - totalExpenses).toFixed(2)}
-              </div>
+              <div className="text-2xl font-bold">R$ {creditCardExpenses.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">
+                Limite: R$ {creditCardLimit.toFixed(2)}
+              </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-card">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Cartão</CardTitle>
-              <CreditCard className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-medium">Parcelas Futuras</CardTitle>
+              <WalletCards className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="text-sm text-muted-foreground">
-                  Limite: R$ {creditCardLimit.toFixed(2)}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Gasto no Mês: R$ {creditCardExpenses.toFixed(2)}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Parcelas Futuras: R$ {futureInstallments.toFixed(2)}
-                </div>
-                <div className={`text-2xl font-bold ${(creditCardLimit - creditCardExpenses) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  Disponível: R$ {(creditCardLimit - creditCardExpenses).toFixed(2)}
-                </div>
-              </div>
+              <div className="text-2xl font-bold">R$ {futureInstallments.toFixed(2)}</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Month Selector */}
-        <Card className="mb-8 bg-card">
-          <CardHeader>
-            <CardTitle>Selecionar Mês</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Select
-              value={selectedMonth}
-              onValueChange={setSelectedMonth}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value}>
-                    {month.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <FinancialCharts
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
+            expenses={expenses}
+          />
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Forms */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ExpenseForm selectedMonth={selectedMonth} onExpenseAdded={fetchExpenses} />
-          <IncomeForm selectedMonth={selectedMonth} onIncomeAdded={fetchIncome} />
+          <div className="space-y-6">
+            <IncomeForm selectedMonth={selectedMonth} onIncomeAdded={fetchIncome} />
+            <CreditCardLimit onLimitUpdated={fetchExpenses} />
+          </div>
         </div>
-
-        {/* Credit Card Limit */}
-        <div className="mt-8">
-          <CreditCardLimit onLimitUpdated={fetchExpenses} />
-        </div>
-
-        {/* Charts */}
-        <Card className="mt-8 bg-card">
-          <CardHeader>
-            <CardTitle>Resumo Financeiro</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <FinancialCharts 
-              totalIncome={totalIncome}
-              totalExpenses={totalExpenses}
-              expenses={expenses}
-            />
-          </CardContent>
-        </Card>
       </main>
     </div>
   );

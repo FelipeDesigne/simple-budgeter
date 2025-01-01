@@ -78,13 +78,7 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
         throw errors[0].error;
       }
 
-      toast({
-        title: "Sucesso",
-        description: numberOfInstallments > 1 
-          ? `Despesa parcelada em ${numberOfInstallments}x adicionada com sucesso`
-          : "Despesa adicionada com sucesso",
-      });
-
+      // Limpar o formulário antes de chamar onExpenseAdded
       setFormData({
         description: '',
         value: '',
@@ -93,7 +87,19 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
         installments: '1'
       });
 
+      // Aguardar um pequeno delay para garantir que os dados foram inseridos
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Chamar onExpenseAdded após o delay
       onExpenseAdded();
+
+      toast({
+        title: "Sucesso",
+        description: numberOfInstallments > 1 
+          ? `Despesa parcelada em ${numberOfInstallments}x adicionada com sucesso`
+          : "Despesa adicionada com sucesso",
+      });
+
     } catch (error) {
       console.error('Erro ao adicionar despesa:', error);
       toast({
@@ -119,6 +125,7 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="bg-secondary"
+              required
             />
           </div>
           <div className="space-y-2">
@@ -130,6 +137,9 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
               value={formData.value}
               onChange={(e) => setFormData({ ...formData, value: e.target.value })}
               className="bg-secondary"
+              required
+              min="0"
+              step="0.01"
             />
           </div>
           <div className="space-y-2">
@@ -137,6 +147,7 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
             <Select
               value={formData.category}
               onValueChange={(value) => setFormData({ ...formData, category: value })}
+              required
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a categoria" />
@@ -157,6 +168,7 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
             <Select
               value={formData.payment_method}
               onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
+              required
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o método de pagamento" />
@@ -175,6 +187,7 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
               <Select
                 value={formData.installments}
                 onValueChange={(value) => setFormData({ ...formData, installments: value })}
+                required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o número de parcelas" />
