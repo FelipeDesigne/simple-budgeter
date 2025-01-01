@@ -15,6 +15,7 @@ interface ExpenseFormProps {
 
 export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps) => {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     description: '',
     value: '',
@@ -26,6 +27,9 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -36,6 +40,19 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
           variant: "destructive",
         });
         return;
+      }
+
+      // Validar os campos
+      if (!formData.description.trim()) {
+        throw new Error("Descrição é obrigatória");
+      }
+
+      if (!formData.value || Number(formData.value) <= 0) {
+        throw new Error("Valor deve ser maior que zero");
+      }
+
+      if (!formData.category) {
+        throw new Error("Categoria é obrigatória");
       }
 
       const installmentGroup = crypto.randomUUID();
@@ -65,7 +82,7 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
         
         return supabase
           .from('expenses')
-          .insert(expenseData)
+          .insert([expenseData])
           .select();
       });
 
@@ -75,7 +92,7 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
 
       if (errors.length > 0) {
         console.error('Erros ao inserir parcelas:', errors);
-        throw errors[0].error;
+        throw new Error(errors[0].error.message);
       }
 
       // Limpar o formulário antes de chamar onExpenseAdded
@@ -87,10 +104,7 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
         installments: '1'
       });
 
-      // Aguardar um pequeno delay para garantir que os dados foram inseridos
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Chamar onExpenseAdded após o delay
+      // Chamar onExpenseAdded imediatamente após a inserção bem-sucedida
       onExpenseAdded();
 
       toast({
@@ -104,9 +118,11 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
       console.error('Erro ao adicionar despesa:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível adicionar a despesa",
+        description: error instanceof Error ? error.message : "Não foi possível adicionar a despesa",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -138,7 +154,7 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
               onChange={(e) => setFormData({ ...formData, value: e.target.value })}
               className="bg-secondary"
               required
-              min="0"
+              min="0.01"
               step="0.01"
             />
           </div>
@@ -202,8 +218,12 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
               </Select>
             </div>
           )}
-          <Button type="submit" className="w-full">
-            Adicionar Despesa
+          <Button 
+            type="submit" 
+            className="w-full"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Adicionando...' : 'Adicionar Despesa'}
           </Button>
         </form>
       </CardContent>
