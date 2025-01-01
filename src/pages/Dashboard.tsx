@@ -52,8 +52,8 @@ const Dashboard = () => {
       console.log('Mês selecionado:', selectedMonth);
 
       // Formatar a data para o primeiro dia do mês
-      const monthDate = new Date(selectedMonth);
-      const formattedMonth = format(monthDate, 'yyyy-MM-dd');
+      const [year, month] = selectedMonth.split('-');
+      const formattedMonth = `${year}-${month}-01`;
       console.log('Mês formatado:', formattedMonth);
 
       // Buscar todas as despesas do mês selecionado
@@ -96,9 +96,10 @@ const Dashboard = () => {
       }
 
       // Buscar parcelas futuras do cartão de crédito
-      const nextMonth = addMonths(monthDate, 1);
-      const futureStartDate = format(nextMonth, 'yyyy-MM-dd');
-      const futureEndDate = format(addMonths(monthDate, 12), 'yyyy-MM-dd');
+      const [nextYear, nextMonth] = format(addMonths(new Date(formattedMonth), 1), 'yyyy-MM').split('-');
+      const futureStartDate = `${nextYear}-${nextMonth}-01`;
+      const [endYear, endMonth] = format(addMonths(new Date(formattedMonth), 12), 'yyyy-MM').split('-');
+      const futureEndDate = `${endYear}-${endMonth}-01`;
 
       console.log('Buscando parcelas futuras de', futureStartDate, 'até', futureEndDate);
 

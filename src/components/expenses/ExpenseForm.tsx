@@ -69,10 +69,10 @@ export const ExpenseForm = ({ selectedMonth, onExpenseAdded }: ExpenseFormProps)
       console.log('Valor por parcela:', installmentValue);
 
       // Criar array de promessas para todas as parcelas
-      const baseDate = new Date(selectedMonth);
+      const [year, month] = selectedMonth.split('-');
       const installmentPromises = Array.from({ length: numberOfInstallments }, (_, index) => {
-        // Garantir que a data base esteja no primeiro dia do mês
-        const installmentDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + index, 1);
+        // Calcular o mês da parcela
+        const installmentDate = new Date(parseInt(year), parseInt(month) - 1 + index, 1);
         const monthFormatted = format(installmentDate, 'yyyy-MM-dd');
         
         const expenseData = {
